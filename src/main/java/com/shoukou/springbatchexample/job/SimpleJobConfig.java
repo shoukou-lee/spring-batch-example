@@ -1,5 +1,6 @@
 package com.shoukou.springbatchexample.job;
 
+import com.shoukou.springbatchexample.tasklet.SimpleJobTasklet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -19,11 +20,13 @@ public class SimpleJobConfig {
 
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
+    private final SimpleJobTasklet tasklet1;
 
     @Bean
     public Job simpleJob() {
+        log.info(">>>>> definition simpleJob");
         return jobBuilderFactory.get("simpleJob") // job 이름 설정
-                .start(simpleStep1(null))
+                .start(simpleStep1())
                 .next(simpleStep2(null))
                 .build();
     }
@@ -35,21 +38,9 @@ public class SimpleJobConfig {
      */
     @Bean
     @JobScope
-    public Step simpleStep1(@Value("#{jobParameters[requestDate]}") String requestDate) {
+    public Step simpleStep1() {
         return stepBuilderFactory.get("simpleStep1") // step 이름 설정
-                .tasklet(
-                        (contribution, chunkContext) -> {
-                            /*
-                            * BATCH_JOB_EXECUTION 테이블은 JOB_INSTANCE의 자식이며,
-                            * JOB_INSTANCE의 성공/실패 내역을 포함
-                            * 아래 throw가 실행되면 실패된 내역을 테이블에서 확인 가능능                            * */
-                            // throw new IllegalArgumentException("step1 실패");
-
-                            log.info(">>>>> This is Step 1");
-                            log.info(">>>>> requestDate = {}", requestDate);
-                            return RepeatStatus.FINISHED;
-                        }
-                ).build();
+                .tasklet(tasklet1).build();
     }
 
     @Bean
