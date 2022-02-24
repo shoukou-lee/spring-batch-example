@@ -6,7 +6,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   batch:
     jdbc:
-      initialize-schema: always # ????? ??? ???? ??
+      initialize-schema: always # to generate meta-table automatically
+
+    # run a job when a passing program arg is equal to job.name
+    # if job matching job.name is NOT exist, no batch will be run.
+    job:
+      names: ${job.name:NONE}
 
 jpa:
   hibernate:
