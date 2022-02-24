@@ -1,17 +1,16 @@
 spring:
   datasource:
-    url: jdbc:h2:mem://localhost/~/testdb
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-
-  h2:
-    console:
-      enabled: true
+    url: jdbc:mysql://localhost:3306/spring_batch
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  batch:
+    jdbc:
+      initialize-schema: always
 
 jpa:
   hibernate:
-    ddl-auto: create-drop
+    ddl-auto: none
   properties:
     hibrtnate:
       format_sql: true
