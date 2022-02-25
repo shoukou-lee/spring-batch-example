@@ -24,7 +24,6 @@ public class SimpleJobConfig {
 
     @Bean
     public Job simpleJob() {
-        log.info(">>>>> definition simpleJob");
         return jobBuilderFactory.get("simpleJob") // job 이름 설정
                 .start(simpleStep1())
                 .next(simpleStep2(null))

@@ -12,6 +12,7 @@ spring:
     # if job matching job.name is NOT exist, no batch will be run.
     job:
       names: ${job.name:NONE}
+
   jpa:
     hibernate:
       ddl-auto: none
@@ -23,4 +24,4 @@ logging:
   level:
     org:
       springframework:
-        batch: debug
+        batch: DEBUG
