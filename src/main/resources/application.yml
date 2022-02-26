@@ -14,9 +14,9 @@ spring:
       names: ${job.name:NONE}
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
-      hibrtnate:
+      hibernate:
         format_sql: true
         use_sql_comments: true
 

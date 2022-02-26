@@ -26,5 +26,4 @@ public class Pay2 {
         this.txName = txName;
         this.txDateTime = txDateTime;
     }
-
 }

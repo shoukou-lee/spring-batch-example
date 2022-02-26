@@ -15,8 +15,8 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.persistence.EntityManagerFactory;
 
-@Slf4j // log 사용을 위한 lombok 어노테이션
-@RequiredArgsConstructor // 생성자 DI를 위한 lombok 어노테이션
+@Slf4j
+@RequiredArgsConstructor
 @Configuration
 public class JpaPagingItemReaderJobConfig {
     private final JobBuilderFactory jobBuilderFactory;
@@ -35,7 +35,7 @@ public class JpaPagingItemReaderJobConfig {
     @Bean
     public Step jpaPagingItemReaderStep() {
         return stepBuilderFactory.get("jpaPagingItemReaderStep")
-                .<Pay, Pay>chunk(chunkSize)
+                .<Pay, Pay>chunk(chunkSize) // Reader가 반환할 타입, Writer에 넘어갈 타입
                 .reader(jpaPagingItemReader())
                 .writer(jpaPagingItemWriter())
                 .build();
