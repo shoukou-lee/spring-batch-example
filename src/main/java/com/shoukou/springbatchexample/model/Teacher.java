@@ -26,7 +26,7 @@ public class Teacher {
      *
      * NOTE : 더 방어적인 코딩을 하려면, 따로 만든 생성자에 @Builder 를 적용한다.
      */
-    @OneToMany(mappedBy = "teacher")
+    @OneToMany(mappedBy = "teacher", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Student> students = new ArrayList<>();
 

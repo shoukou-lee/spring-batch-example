@@ -40,7 +40,7 @@ public class TransactionProcessorJobConfigTest {
     }
 
     @Test
-    void 테스트() throws Exception {
+    void transactionProcessorBatchJob_성공() throws Exception {
         // given
         for(long i = 0; i < 10; i++) {
             String teacherName = i + "선생님";
