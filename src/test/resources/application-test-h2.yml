@@ -1,9 +1,14 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/spring_batch
-    username: root
-    password: root
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:h2:mem://localhost/~/testdb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  h2:
+    console:
+      enabled: true
+
   batch:
     jdbc:
       initialize-schema: always # to generate meta-table automatically
@@ -15,7 +20,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: create
     properties:
       hibrtnate:
         format_sql: true

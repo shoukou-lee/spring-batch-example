@@ -4,6 +4,7 @@ spring:
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   batch:
     jdbc:
       initialize-schema: always # to generate meta-table automatically
@@ -12,9 +13,11 @@ spring:
     # if job matching job.name is NOT exist, no batch will be run.
     job:
       names: ${job.name:NONE}
+
   jpa:
     hibernate:
       ddl-auto: update
+
     properties:
       hibernate:
         format_sql: true
@@ -25,6 +28,7 @@ logging:
     org:
       springframework:
         batch: debug
+
       hibernate:
         SQL: debug
         type:

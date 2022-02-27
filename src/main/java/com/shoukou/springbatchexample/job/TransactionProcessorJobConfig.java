@@ -88,7 +88,7 @@ public class TransactionProcessorJobConfig {
 
     private ItemWriter<Teacher> transactionProcessorBatchWriter2() {
         return items -> {
-            log.info(">>>>> Item Write");
+            log.info(">>>>> [transactionProcessorBatchWriter2] Item Write");
             for (Teacher item : items) {
                 log.info("teacher={}, studentSize={}",
                         item.getName(), item.getStudents().size());
