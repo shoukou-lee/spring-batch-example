@@ -1,4 +1,4 @@
-package com.shoukou.springbatchexample.job;
+package com.shoukou.springbatchexample.batch.job;
 
 import com.shoukou.springbatchexample.model.Teacher;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +8,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
@@ -20,37 +21,40 @@ import javax.persistence.EntityManagerFactory;
 @Slf4j
 @RequiredArgsConstructor
 @Configuration
-public class TransactionWriterJobConfig {
-    private static final String JOB_NAME = "transactionWriterBatch";
-    private static final String BEAN_PREFIX = JOB_NAME + "_";
+public class ProcessorConvertJobConfig {
+    public static final String JOB_NAME = "ProcessorConvertBatch";
+    public static final String BEAN_PREFIX = JOB_NAME + "_";
 
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
     private final EntityManagerFactory entityManagerFactory;
 
+    // lombok 아닌 org.springframework.beans.factory.annotation.Value
     @Value("${chunkSize:1000}")
-    private int chunkSize = 1000;
+    private int chunkSize;
 
-    @Bean
-    public Job transactionWriterBatchJob() {
+    @Bean(JOB_NAME)
+    public Job job() {
         return jobBuilderFactory.get(JOB_NAME)
                 .preventRestart()
-                .start(transactionWriterBatchStep())
+                .start(step())
                 .build();
     }
 
     @Bean(BEAN_PREFIX + "step")
     @JobScope
-    public Step transactionWriterBatchStep() {
+    public Step step() {
         return stepBuilderFactory.get(BEAN_PREFIX + "step")
-                .<Teacher, Teacher>chunk(chunkSize)
-                .reader(transactionWriterBatchReader())
-                .writer(transactionWriterBatchWriter())
+                .<Teacher, Teacher>chunk(chunkSize) // Reader에서 읽어올 타입, Writer의 입력타입
+                .reader(reader())
+                .processor(processor())
+                .writer(writer())
                 .build();
     }
 
+    // 모든 teacher를 조회
     @Bean
-    public JpaPagingItemReader<Teacher> transactionWriterBatchReader() {
+    public JpaPagingItemReader<Teacher> reader() {
         return new JpaPagingItemReaderBuilder<Teacher>()
                 .name(BEAN_PREFIX + "reader")
                 .entityManagerFactory(entityManagerFactory)
@@ -59,13 +63,26 @@ public class TransactionWriterJobConfig {
                 .build();
     }
 
-    // writer 또한 Lazy loading 가능
-    private ItemWriter<Teacher> transactionWriterBatchWriter() {
+    @Bean
+    public ItemProcessor<Teacher, Teacher> processor() {
+        return teacher -> {
+            // 짝수 아이디이면 NULL 리턴
+            boolean isIgnoreTarget = teacher.getId() % 2 == 0L;
+            if (isIgnoreTarget) {
+                log.info(">>>>> Teacher name = {}, isIgnoreTarget = {}",
+                        teacher.getName(), isIgnoreTarget);
+                return null;
+            }
+            
+            return teacher;
+        };
+    }
+
+    // 출력
+    private ItemWriter<Teacher> writer() {
         return items -> {
-            log.info(">>>>> Item write");
-            for (Teacher item : items) {
-                log.info("teacher = {}, student size = {}",
-                        item.getName(), item.getStudents().size());
+            for (Teacher item: items) {
+                log.info("Teacher Name = {}", item.getName());
             }
         };
     }

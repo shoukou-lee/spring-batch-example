@@ -1,4 +1,4 @@
-package com.shoukou.springbatchexample.job;
+package com.shoukou.springbatchexample.batch.job;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.shoukou.springbatchexample.job;
+package com.shoukou.springbatchexample.batch.job;
 
 import com.shoukou.springbatchexample.model.Teacher;
 import lombok.RequiredArgsConstructor;
@@ -8,54 +8,49 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
-import org.springframework.batch.item.support.CompositeItemProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.persistence.EntityManagerFactory;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
 @Configuration
-public class ProcessorCompositeJobConfig {
-    public static final String JOB_NAME = "processorCompositeBatch";
-    public static final String BEAN_PREFIX = JOB_NAME + "_";
+public class TransactionWriterJobConfig {
+    private static final String JOB_NAME = "transactionWriterBatch";
+    private static final String BEAN_PREFIX = JOB_NAME + "_";
 
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
     private final EntityManagerFactory entityManagerFactory;
 
     @Value("${chunkSize:1000}")
-    private int chunkSize;
+    private int chunkSize = 1000;
 
-    @Bean(JOB_NAME)
-    public Job processorCompositeBatchJob() {
+    @Bean
+    public Job transactionWriterBatchJob() {
         return jobBuilderFactory.get(JOB_NAME)
                 .preventRestart()
-                .start(processorCompositeBatchStep())
+                .start(transactionWriterBatchStep())
                 .build();
     }
 
     @Bean(BEAN_PREFIX + "step")
     @JobScope
-    public Step processorCompositeBatchStep() {
+    public Step transactionWriterBatchStep() {
         return stepBuilderFactory.get(BEAN_PREFIX + "step")
-                .<Teacher, String>chunk(chunkSize)
-                .reader(processorCompositeBatchReader())
-                .processor(compositeProcessor())
-                .writer(processorCompositeBatchWriter())
+                .<Teacher, Teacher>chunk(chunkSize)
+                .reader(transactionWriterBatchReader())
+                .writer(transactionWriterBatchWriter())
                 .build();
     }
 
     @Bean
-    public JpaPagingItemReader<Teacher> processorCompositeBatchReader() {
+    public JpaPagingItemReader<Teacher> transactionWriterBatchReader() {
         return new JpaPagingItemReaderBuilder<Teacher>()
                 .name(BEAN_PREFIX + "reader")
                 .entityManagerFactory(entityManagerFactory)
@@ -64,34 +59,14 @@ public class ProcessorCompositeJobConfig {
                 .build();
     }
 
-    /**
-     * @CompositeItemProcessor: ItemProcessor간의 체이닝을 지원하는 Processor
-     */
-    @Bean
-    public CompositeItemProcessor compositeProcessor() {
-        List<ItemProcessor> delegates = new ArrayList<>(2);
-        delegates.add(proc1());
-        delegates.add(proc2());
-
-        CompositeItemProcessor processor = new CompositeItemProcessor<>();
-        processor.setDelegates(delegates);
-
-        return processor;
-    }
-
-    public ItemProcessor<Teacher, String> proc1() {
-        return Teacher::getName;
-    }
-
-    public ItemProcessor<String, String> proc2() {
-        return name -> "안녕하새요. " + name + "입니다 .";
-    }
-
-    private ItemWriter<String> processorCompositeBatchWriter() {
+    // writer 또한 Lazy loading 가능
+    private ItemWriter<Teacher> transactionWriterBatchWriter() {
         return items -> {
-            for (String item : items) {
-                log.info("Teacher name = {}", item);
-            }  
+            log.info(">>>>> Item write");
+            for (Teacher item : items) {
+                log.info("teacher = {}, student size = {}",
+                        item.getName(), item.getStudents().size());
+            }
         };
     }
 }

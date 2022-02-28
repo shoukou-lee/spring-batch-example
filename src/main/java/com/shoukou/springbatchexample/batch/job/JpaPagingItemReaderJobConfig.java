@@ -1,4 +1,4 @@
-package com.shoukou.springbatchexample.job;
+package com.shoukou.springbatchexample.batch.job;
 
 import com.shoukou.springbatchexample.model.Pay;
 import lombok.RequiredArgsConstructor;

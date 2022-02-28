@@ -1,9 +1,6 @@
 package com.shoukou.springbatchexample.repository.impl;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.shoukou.springbatchexample.model.QStudent;
-import com.shoukou.springbatchexample.model.QTeacher;
-import com.shoukou.springbatchexample.model.Student;
 import com.shoukou.springbatchexample.model.Teacher;
 import com.shoukou.springbatchexample.repository.custom.TeacherRepositoryCustom;
 import lombok.RequiredArgsConstructor;
@@ -11,16 +8,18 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Optional;
 
-import static com.shoukou.springbatchexample.model.QStudent.*;
-import static com.shoukou.springbatchexample.model.QTeacher.*;
+import static com.shoukou.springbatchexample.model.QStudent.student;
+import static com.shoukou.springbatchexample.model.QTeacher.teacher;
 
 @RequiredArgsConstructor
 public class TeacherRepositoryImpl implements TeacherRepositoryCustom {
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public List<Teacher> findAllTeachers() {
+    public List<Teacher> findAllTeachersWithStudents() {
         return jpaQueryFactory.selectFrom(teacher)
+                .leftJoin(teacher.students)
+                .fetchJoin()
                 .fetch();
     }
 

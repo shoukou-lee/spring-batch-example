@@ -8,61 +8,98 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
-/**
- * 일단 MYSQL로 테이블에 저장된 값으로 해보자
- */
-// @ExtendWith(MockitoExtension.class)
-// @ActiveProfiles("test-h2")
+import static org.assertj.core.api.Assertions.assertThat;
+
 @SpringBootTest
+@ActiveProfiles("test")
 public class TeacherRepositoryTest {
     @Autowired
     private TeacherRepository teacherRepository;
-    
+
+    @Autowired
+    private StudentRepository studentRepository;
+
     @BeforeEach
     void init() {
-        
+
     }
     
     @AfterEach
     void tearDown() {
-        
+        studentRepository.deleteAll();
+        teacherRepository.deleteAll();
     }
-    
-    @Test
-    void findAllTeacher_일단_저장된값으로 () {
-        // given
 
-        // when
-        List<Teacher> teachers = teacherRepository.findAllTeachers();
+    @Test
+    void findAllTeacher_성공 () {
+        // given
+        for (int i = 0; i < 3; i++) {
+            Teacher t = Teacher.builder()
+                    .name("Teacher" + Long.valueOf(i))
+                    .subject("Subject" + Long.valueOf(i))
+                    .build();
+            Teacher ret = teacherRepository.save(t);
+        }
+        List<Teacher> teachers = teacherRepository.findAll();
+
+        // when - 얘는 Student 정보도 바로 fetch join
+        List<Teacher> result = teacherRepository.findAllTeachersWithStudents();
 
         // then
-        // 1~15 출력되야 댐
-        for (Teacher teacher : teachers) {
-            System.out.println("teacher.getId() = " + teacher.getId());
+        for (int i = 0; i < teachers.size(); i++) {
+            assertThat(result.get(i).getId()).isEqualTo(teachers.get(i).getId());
+            assertThat(result.get(i).getName()).isEqualTo(teachers.get(i).getName());
+            assertThat(result.get(i).getSubject()).isEqualTo(teachers.get(i).getSubject());
         }
     }
 
+    @Transactional
     @Test
-    void findTeacherByStudentId_일단_저장된값으로() {
+    void findTeacherByStudentId_성공() {
         // given
+        for (int i = 0; i < 2; i++) {
+            Teacher t = Teacher.builder()
+                    .name("Teacher" + Long.valueOf(i))
+                    .subject("Subject" + Long.valueOf(i))
+                    .build();
+            teacherRepository.save(t);
+        }
+
+        for (int i = 0; i < 4; i++) {
+            Student s = Student.builder()
+                    .name("Student" + Long.valueOf(i))
+                    .build();
+            studentRepository.save(s);
+        }
+
+        List<Teacher> teachers = teacherRepository.findAllTeachersWithStudents();
+        List<Student> students = studentRepository.findAll();
+
+        teachers.get(0).addStudent(students.get(0));
+        teachers.get(0).addStudent(students.get(1));
+        teachers.get(1).addStudent(students.get(2));
+        teachers.get(1).addStudent(students.get(3));
 
         // when
-        Teacher teacher = teacherRepository.findTeacherByStudentId(2L)
+        Teacher teacher0 = teacherRepository.findTeacherByStudentId(1L)
+                .orElseThrow(() -> new RuntimeException("student ID로 못찾는 경우"));
+
+        Teacher teacher1 = teacherRepository.findTeacherByStudentId(2L)
+                .orElseThrow(() -> new RuntimeException("student ID로 못찾는 경우"));
+
+        Teacher teacher2 = teacherRepository.findTeacherByStudentId(3L)
+                .orElseThrow(() -> new RuntimeException("student ID로 못찾는 경우"));
+
+        Teacher teacher3 = teacherRepository.findTeacherByStudentId(4L)
                 .orElseThrow(() -> new RuntimeException("student ID로 못찾는 경우"));
 
         // then
-        System.out.println("teacher.getId() = " + teacher.getId());
-        System.out.println("teacher.getName() = " + teacher.getName());
-
-        // fetchjoin 까먹으면 여기 실행안댐
-        List<Student> hisStudents = teacher.getStudents();
-        for (Student hisStudent : hisStudents) {
-            System.out.println("hisStudent.getName() = " + hisStudent.getName());
-        }
+        assertThat(teacher0.getId()).isEqualTo(teacher1.getId());
+        assertThat(teacher2.getId()).isEqualTo(teacher3.getId());
     }
-    
+
 }

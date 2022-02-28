@@ -1,4 +1,4 @@
-package com.shoukou.springbatchexample.tasklet;
+package com.shoukou.springbatchexample.batch.tasklet;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepContribution;

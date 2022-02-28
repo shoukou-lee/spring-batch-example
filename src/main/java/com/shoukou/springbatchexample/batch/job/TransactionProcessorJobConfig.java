@@ -1,5 +1,6 @@
-package com.shoukou.springbatchexample.job;
+package com.shoukou.springbatchexample.batch.job;
 
+import com.shoukou.springbatchexample.model.ClassInformation;
 import com.shoukou.springbatchexample.model.Teacher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,40 +22,45 @@ import javax.persistence.EntityManagerFactory;
 @Slf4j
 @RequiredArgsConstructor
 @Configuration
-public class ProcessorConvertJobConfig {
-    public static final String JOB_NAME = "ProcessorConvertBatch";
+public class TransactionProcessorJobConfig {
+
+    public static final String JOB_NAME = "transactionProcessorBatch";
     public static final String BEAN_PREFIX = JOB_NAME + "_";
 
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
     private final EntityManagerFactory entityManagerFactory;
 
-    // lombok 아닌 org.springframework.beans.factory.annotation.Value
     @Value("${chunkSize:1000}")
     private int chunkSize;
 
     @Bean(JOB_NAME)
-    public Job job() {
+    public Job transactionProcessorBatchJob() {
         return jobBuilderFactory.get(JOB_NAME)
                 .preventRestart()
-                .start(step())
+                .start(transactionProcessorBatchStep())
                 .build();
     }
 
     @Bean(BEAN_PREFIX + "step")
     @JobScope
-    public Step step() {
+    public Step transactionProcessorBatchStep() {
         return stepBuilderFactory.get(BEAN_PREFIX + "step")
-                .<Teacher, Teacher>chunk(chunkSize) // Reader에서 읽어올 타입, Writer의 입력타입
-                .reader(reader())
-                .processor(processor())
-                .writer(writer())
+                /* processor의 트랜잭션 확인
+                .<Teacher, ClassInformation>chunk(chunkSize)
+                .reader(transactionReader())
+                .processor(transactionProcessor())
+                .writer(transactionWriter())
+                .build();
+                 */
+                .<Teacher, Teacher>chunk(chunkSize)
+                .reader(transactionProcessorBatchReader())
+                .writer(transactionProcessorBatchWriter2())
                 .build();
     }
 
-    // 모든 teacher를 조회
     @Bean
-    public JpaPagingItemReader<Teacher> reader() {
+    public JpaPagingItemReader<Teacher> transactionProcessorBatchReader() {
         return new JpaPagingItemReaderBuilder<Teacher>()
                 .name(BEAN_PREFIX + "reader")
                 .entityManagerFactory(entityManagerFactory)
@@ -63,26 +69,29 @@ public class ProcessorConvertJobConfig {
                 .build();
     }
 
-    @Bean
-    public ItemProcessor<Teacher, Teacher> processor() {
-        return teacher -> {
-            // 짝수 아이디이면 NULL 리턴
-            boolean isIgnoreTarget = teacher.getId() % 2 == 0L;
-            if (isIgnoreTarget) {
-                log.info(">>>>> Teacher name = {}, isIgnoreTarget = {}",
-                        teacher.getName(), isIgnoreTarget);
-                return null;
+    // transaction 범위 안에서의 processor 처리
+    public ItemProcessor<Teacher, ClassInformation> transactionProcessor() {
+        return teacher -> ClassInformation.builder()
+                .teacherName(teacher.getName())
+                .studentSize(teacher.getStudents().size())
+                .build();
+    }
+
+    private ItemWriter<ClassInformation> transactionWriter() {
+        return items -> {
+            log.info(">>>>> Item Write");
+            for (ClassInformation item : items) {
+                log.info("반 정보 = {}", item);
             }
-            
-            return teacher;
         };
     }
 
-    // 출력
-    private ItemWriter<Teacher> writer() {
+    private ItemWriter<Teacher> transactionProcessorBatchWriter2() {
         return items -> {
-            for (Teacher item: items) {
-                log.info("Teacher Name = {}", item.getName());
+            log.info(">>>>> [transactionProcessorBatchWriter2] Item Write");
+            for (Teacher item : items) {
+                log.info("teacher={}, studentSize={}",
+                        item.getName(), item.getStudents().size());
             }
         };
     }

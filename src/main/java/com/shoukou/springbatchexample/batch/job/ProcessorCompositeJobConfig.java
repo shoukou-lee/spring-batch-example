@@ -1,6 +1,5 @@
-package com.shoukou.springbatchexample.job;
+package com.shoukou.springbatchexample.batch.job;
 
-import com.shoukou.springbatchexample.model.ClassInformation;
 import com.shoukou.springbatchexample.model.Teacher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,18 +12,20 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
+import org.springframework.batch.item.support.CompositeItemProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.persistence.EntityManagerFactory;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
 @Configuration
-public class TransactionProcessorJobConfig {
-
-    public static final String JOB_NAME = "transactionProcessorBatch";
+public class ProcessorCompositeJobConfig {
+    public static final String JOB_NAME = "processorCompositeBatch";
     public static final String BEAN_PREFIX = JOB_NAME + "_";
 
     private final JobBuilderFactory jobBuilderFactory;
@@ -35,32 +36,26 @@ public class TransactionProcessorJobConfig {
     private int chunkSize;
 
     @Bean(JOB_NAME)
-    public Job transactionProcessorBatchJob() {
+    public Job processorCompositeBatchJob() {
         return jobBuilderFactory.get(JOB_NAME)
                 .preventRestart()
-                .start(transactionProcessorBatchStep())
+                .start(processorCompositeBatchStep())
                 .build();
     }
 
     @Bean(BEAN_PREFIX + "step")
     @JobScope
-    public Step transactionProcessorBatchStep() {
+    public Step processorCompositeBatchStep() {
         return stepBuilderFactory.get(BEAN_PREFIX + "step")
-                /* processor의 트랜잭션 확인
-                .<Teacher, ClassInformation>chunk(chunkSize)
-                .reader(transactionReader())
-                .processor(transactionProcessor())
-                .writer(transactionWriter())
-                .build();
-                 */
-                .<Teacher, Teacher>chunk(chunkSize)
-                .reader(transactionProcessorBatchReader())
-                .writer(transactionProcessorBatchWriter2())
+                .<Teacher, String>chunk(chunkSize)
+                .reader(processorCompositeBatchReader())
+                .processor(compositeProcessor())
+                .writer(processorCompositeBatchWriter())
                 .build();
     }
 
     @Bean
-    public JpaPagingItemReader<Teacher> transactionProcessorBatchReader() {
+    public JpaPagingItemReader<Teacher> processorCompositeBatchReader() {
         return new JpaPagingItemReaderBuilder<Teacher>()
                 .name(BEAN_PREFIX + "reader")
                 .entityManagerFactory(entityManagerFactory)
@@ -69,30 +64,34 @@ public class TransactionProcessorJobConfig {
                 .build();
     }
 
-    // transaction 범위 안에서의 processor 처리
-    public ItemProcessor<Teacher, ClassInformation> transactionProcessor() {
-        return teacher -> ClassInformation.builder()
-                .teacherName(teacher.getName())
-                .studentSize(teacher.getStudents().size())
-                .build();
+    /**
+     * @CompositeItemProcessor: ItemProcessor간의 체이닝을 지원하는 Processor
+     */
+    @Bean
+    public CompositeItemProcessor compositeProcessor() {
+        List<ItemProcessor> delegates = new ArrayList<>(2);
+        delegates.add(proc1());
+        delegates.add(proc2());
+
+        CompositeItemProcessor processor = new CompositeItemProcessor<>();
+        processor.setDelegates(delegates);
+
+        return processor;
     }
 
-    private ItemWriter<ClassInformation> transactionWriter() {
-        return items -> {
-            log.info(">>>>> Item Write");
-            for (ClassInformation item : items) {
-                log.info("반 정보 = {}", item);
-            }
-        };
+    public ItemProcessor<Teacher, String> proc1() {
+        return Teacher::getName;
     }
 
-    private ItemWriter<Teacher> transactionProcessorBatchWriter2() {
+    public ItemProcessor<String, String> proc2() {
+        return name -> "안녕하새요. " + name + "입니다 .";
+    }
+
+    private ItemWriter<String> processorCompositeBatchWriter() {
         return items -> {
-            log.info(">>>>> [transactionProcessorBatchWriter2] Item Write");
-            for (Teacher item : items) {
-                log.info("teacher={}, studentSize={}",
-                        item.getName(), item.getStudents().size());
-            }
+            for (String item : items) {
+                log.info("Teacher name = {}", item);
+            }  
         };
     }
 }

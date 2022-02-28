@@ -31,8 +31,7 @@ public class Teacher {
     private List<Student> students = new ArrayList<>();
 
     public void addStudent(Student student) {
-        students.add(student);
         student.setTeacher(this);
+        students.add(student);
     }
-
 }
