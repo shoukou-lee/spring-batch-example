@@ -8,8 +8,8 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Optional;
 
-import static com.shoukou.springbatchexample.model.QStudent.student;
-import static com.shoukou.springbatchexample.model.QTeacher.teacher;
+import static com.shoukou.springbatchexample.simplesample.model.QStudent.student;
+import static com.shoukou.springbatchexample.simplesample.model.QTeacher.teacher;
 
 @RequiredArgsConstructor
 public class TeacherRepositoryImpl implements TeacherRepositoryCustom {
