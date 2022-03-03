@@ -7,6 +7,7 @@ import com.shoukou.springbatchexample.model.DormantUser;
 import com.shoukou.springbatchexample.model.User;
 import com.shoukou.springbatchexample.repository.DormantUserRepository;
 import com.shoukou.springbatchexample.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.BatchStatus;
@@ -38,8 +39,8 @@ public class QueryDslJobConfigTest {
     @Autowired
     private JobLauncherTestUtils jobLauncherTestUtils;
 
-    @BeforeEach
-    public void init() {
+    @AfterEach
+    public void tearDown() {
         userRepository.deleteAllInBatch();
         dormantUserRepository.deleteAllInBatch();
     }
