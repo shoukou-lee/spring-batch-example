@@ -19,10 +19,17 @@ public class User {
     private Long id;
     private String name;
     private LocalDate lastAccess;
+    private Boolean isDormant;
 
     @Builder
     public User(String name, LocalDate lastAccess) {
         this.name = name;
         this.lastAccess = lastAccess;
+        this.isDormant = false;
     }
+
+    public void setIsDormant(Boolean isDormant) {
+        this.isDormant = isDormant;
+    }
+
 }
